@@ -1,0 +1,265 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\title{Audio Signal Modulation and Demodulation Analysis}
+\author{Muhammad Ammar}
+\date{\02/06/2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+This project involves the application and comparative analysis of amplitude modulation (AM) and frequency modulation (FM) techniques on audio signals. The aim is to understand the modulation and demodulation processes and to compare the quality of the original, modulated, and demodulated audio signals.
+
+\section{Methodology}
+
+\subsection{Loading and Preparing Audio}
+An OGG file is loaded and converted to raw audio format using Python. The audio signal is then normalized for further processing.
+
+\begin{verbatim}
+from pydub import AudioSegment
+import numpy as np
+
+# Define the file path
+file_path = r"D:\C (Fun Projects)\Audio Signal Modulation Analysis\WhatsApp Ptt 2024-06-02 at 12.06.28 AM.ogg"
+
+# Load the OGG file
+audio = AudioSegment.from_file(file_path, format="ogg")
+
+# Convert to raw audio data
+samples = np.array(audio.get_array_of_samples())
+if audio.channels == 2:
+    samples = samples.reshape((-1, 2))
+    samples = samples.mean(axis=1)  # Convert to mono
+
+# Normalize audio
+samples = samples / np.max(np.abs(samples))
+
+# Save raw audio data to a binary file
+output_path = r"D:\C (Fun Projects)\Audio Signal Modulation Analysis\audio_samples.raw"
+samples.astype(np.float32).tofile(output_path)
+
+print("Decoding and saving raw audio data completed.")
+\end{verbatim}
+
+\subsection{Amplitude Modulation and Demodulation}
+The audio signal is modulated using amplitude modulation (AM) with a carrier frequency of 20 kHz. The modulated signal is then demodulated to recover the original audio. The modulated and demodulated signals are saved for comparison.
+
+\begin{verbatim}
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+const int SAMPLE_RATE = 44100; // 44.1 kHz
+const double CARRIER_FREQ = 20000.0; // 20 kHz
+const double PI = 3.14159265358979323846;
+
+// To read raw audio data from file
+vector<float> readAudioData(const string& filename, size_t& numSamples) {
+    ifstream input(filename, ios::binary);
+
+    if (!input) {
+        cerr << "Failed to open input file.\n";
+        exit(1);
+    }
+
+    input.seekg(0, ios::end);
+    size_t fileSize = input.tellg();
+    input.seekg(0, ios::beg);
+    numSamples = fileSize / sizeof(float);
+
+    vector<float> samples(numSamples);
+    input.read(reinterpret_cast<char*>(samples.data()), fileSize);
+    return samples;
+}
+
+// Function to write audio data to file
+void writeAudioData(const string& filename, const vector<float>& samples) {
+    ofstream output(filename, ios::binary);
+
+    if (!output) {
+        cerr << "Failed to open output file.\n";
+        exit(1);
+    }
+    output.write(reinterpret_cast<const char*>(samples.data()), samples.size() * sizeof(float));
+}
+
+int main() {
+    size_t numSamples;
+
+    vector<float> samples = readAudioData("audio_samples.raw", numSamples);
+
+    vector<double> time(numSamples);
+    for (size_t i = 0; i < numSamples; ++i) {
+        time[i] = static_cast<double>(i) / SAMPLE_RATE;
+    }
+
+    vector<float> modulatedAM(numSamples);
+    for (size_t i = 0; i < numSamples; ++i) {
+        modulatedAM[i] = samples[i] * cos(2 * PI * CARRIER_FREQ * time[i]);
+    }
+    writeAudioData("modulated_am.raw", modulatedAM);
+
+    vector<float> demodulatedAM(numSamples);
+    for (size_t i = 0; i < numSamples; ++i) {
+        demodulatedAM[i] = modulatedAM[i] * 2 * cos(2 * PI * CARRIER_FREQ * time[i]);
+    }
+
+    size_t filterSize = 1000;
+    for (size_t i = 0; i < numSamples - filterSize; ++i) {
+        float sum = 0.0f;
+        for (size_t j = 0; j < filterSize; ++j) {
+            sum += demodulatedAM[i + j];
+        }
+        demodulatedAM[i] = sum / filterSize;
+    }
+    writeAudioData("demodulated_am.raw", demodulatedAM);
+
+    return 0;
+}
+\end{verbatim}
+
+\subsection{Frequency Modulation and Demodulation}
+The audio signal is modulated using frequency modulation (FM) with a carrier frequency of 20 kHz. The modulated signal is then demodulated to recover the original audio. The modulated and demodulated signals are saved for comparison.
+
+\begin{verbatim}
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <string>
+#include <vector>
+#include <complex> // For using complex numbers in demodulation
+#include <algorithm> // For max_element
+
+using namespace std;
+
+const int SAMPLE_RATE = 44100;
+const double CARRIER_FREQ = 20000.0;
+const double MODULATION_INDEX = 1.0; // Modulation Index
+const double PI = 3.14159265358979323846;
+
+// Read raw audio data from file
+vector<float> readAudioData(const string& filename, size_t& numSamples) {
+    ifstream input(filename, ios::binary);
+
+    if (!input) {
+        cerr << "Failed to open input file. \n";
+        exit(1);
+    }
+
+    input.seekg(0, ios::end);
+    size_t fileSize = input.tellg();
+    input.seekg(0, ios::beg);
+    numSamples = fileSize / sizeof(float);
+
+    vector<float> samples(numSamples);
+    input.read(reinterpret_cast<char*>(samples.data()), fileSize);
+    return samples;
+}
+
+// Write audio data to file
+void writeAudioData(const string& filename, const vector<float>& samples) {
+    ofstream output(filename, ios::binary);
+
+    if (!output) {
+        cerr << "Failed to open output file. \n";
+        exit(1);
+    }
+    output.write(reinterpret_cast<const char*>(samples.data()), samples.size() * sizeof(float));
+}
+
+int main() {
+    size_t numSamples;
+
+    vector<float> samples = readAudioData("audio_samples.raw", numSamples);
+
+    vector<double> time(numSamples);
+    for (size_t i = 0; i < numSamples; ++i) {
+        time[i] = static_cast<double>(i) / SAMPLE_RATE;
+    }
+
+    vector<float> modulatedFM(numSamples);
+    double phase = 0.0;
+    for (size_t i = 0; i < numSamples; ++i) {
+        phase += 2 * PI * (CARRIER_FREQ + MODULATION_INDEX * samples[i]) / SAMPLE_RATE;
+        modulatedFM[i] = cos(phase);
+    }
+    writeAudioData("modulated_fm.raw", modulatedFM);
+
+    vector<float> demodulatedFM(numSamples - 1);
+    for (size_t i = 0; i < numSamples - 1; ++i) {
+        complex<float> analyticSignal(modulatedFM[i], modulatedFM[i + 1]);
+        demodulatedFM[i] = arg(analyticSignal);
+    }
+
+    float maxVal = *max_element(demodulatedFM.begin(), demodulatedFM.end());
+    if (maxVal != 0.0f) { // Avoid division by zero
+        for (size_t i = 0; i < demodulatedFM.size(); ++i) {
+            demodulatedFM[i] /= maxVal;
+        }
+    }
+    writeAudioData("demodulated_fm.raw", demodulatedFM);
+
+    return 0;
+}
+\end{verbatim}
+
+\subsection{Visualization and Analysis}
+The original, modulated, and demodulated signals are visualized using Python to compare the quality of the audio signals.
+
+\begin{verbatim}
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load saved signals
+original = np.fromfile(r"D:\C (Fun Projects)\Audio Signal Modulation Analysis\audio_samples.raw", dtype=np.float32)
+modulated_am = np.fromfile(r"D:\C (Fun Projects)\Audio Signal Modulation Analysis\modulated_am.raw", dtype=np.float32)
+demodulated_am = np.fromfile(r"D:\C (Fun Projects)\Audio Signal Modulation Analysis\demodulated_am.raw", dtype=np.float32)
+modulated_fm = np.fromfile(r"D:\C (Fun Projects)\Audio Signal Modulation Analysis\modulated_fm.raw", dtype=np.float32)
+demodulated_fm = np.fromfile(r"D:\C (Fun Projects)\Audio Signal Modulation Analysis\demodulated_fm.raw", dtype=np.float32)
+
+# Plotting signals for comparison
+plt.figure(figsize=(15, 10))
+
+plt.subplot(3, 2, 1)
+plt.plot(original[:5000])
+plt.title("Original Audio Signal")
+plt.xlabel("Sample")
+plt.ylabel("Amplitude")
+
+plt.subplot(3, 2, 3)
+plt.plot(modulated_am[:5000])
+plt.title("AM Modulated Signal")
+plt.xlabel("Sample")
+plt.ylabel("Amplitude")
+
+plt.subplot(3, 2, 5)
+plt.plot(demodulated_am[:5000])
+plt.title("AM Demodulated Signal")
+plt.xlabel("Sample")
+plt.ylabel("Amplitude")
+
+plt.subplot(3, 2, 2)
+plt.plot(modulated_fm[:5000])
+plt.title("FM Modulated Signal")
+plt.xlabel("Sample")
+plt.ylabel("Amplitude")
+
+plt.subplot(3, 2, 4)
+plt.plot(demodulated_fm[:5000])
+plt.title("FM Demodulated Signal")
+plt.xlabel("Sample")
+plt.ylabel("Amplitude")
+
+plt.tight_layout()
+plt.savefig(r"D:\C (Fun Projects)\Audio Signal Modulation Analysis\modulation_comparison.png")
+plt.show()
+
+\end{verbatim}
