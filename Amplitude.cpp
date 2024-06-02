@@ -12,7 +12,6 @@
 
 using namespace std;
 
-// Constants
 const int SAMPLE_RATE = 44100; //44.1 kHz
 const double CARRIER_FREQ = 20000.0; // 20 kHz
 const double PI = 3.14159265358979323846;
