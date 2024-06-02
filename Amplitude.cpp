@@ -38,7 +38,7 @@ vector<float> readAudioData(const string& filename, size_t& numSamples) {
 
 //function to write audio data to file
 void writeAudioData (const string& filename , const vector<float>& samples){
-    ofstrean output (filename , ios::binary);
+    ofstream output (filename , ios::binary);
 
     if (!output){
         cerr << "Failed to open output file\n";
@@ -61,6 +61,33 @@ int main() {
     for (size_t i=0; i<numSamples; ++i) {
         time[i] = static_cast<double>(i) / SAMPLE_RATE;
     }
+
+    //Amplitude Modulation
+    vector <float> modulatedAM (numSamples);
+    for (size_t i=0; i<numSamples; ++i){
+        modulatedAM[i] = samples[i] * cos(2* PI * CARRIER_FREQ * time[i]);
+    }
+    writeAudioData("modulated_am.raw" , modulatedAM);
+
+    //Amplitude Demodulation
+    vector<float> demodulatedAM(numSamples);
+    for (size_t i=0; i<numSamples; ++i){
+        demodulatedAM[i] = modulatedAM[i] * 2 * cos(2 * PI * CARRIER_FREQ * time[i]);
+
+    }
+
+    //low pass filter for demonstrating purposes
+    size_t filterSize = 1000;
+    for (size_t i=0; i<numSamples - filterSize; ++i) {
+        float sum = 0.0f;
+        for (size_t j=0; j<filterSize; ++j) {
+            sum+= demodulatedAM[i+j];
+        }  
+        demodulatedAM[i] = sum / filterSize;
+    }
+    writeAudioData("demodulated_am.raw" , demodulatedAM);
+    
+    return 0;
     
 }
 
