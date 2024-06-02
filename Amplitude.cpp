@@ -1,4 +1,9 @@
 // Amplitude Modulation and Demodulation
+//formula for Amplitude Modulation -> y(t)=[1+m(t)]⋅cos(2πfcT)
+//y(t) = modulated signal , m(t) = modulating signal , f(c) = carrier frequency
+
+// demodulation -> *lying the modulated signal by the carrier signal
+// -> applying the low pass filter to extract the original message signal
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -8,8 +13,8 @@
 using namespace std;
 
 // Constants
-const int SAMPLE_RATE = 44100;
-const double CARRIER_FREQ = 20000.0; // in Hz
+const int SAMPLE_RATE = 44100; //44.1 kHz
+const double CARRIER_FREQ = 20000.0; // 20 kHz
 const double PI = 3.14159265358979323846;
 
 // To read raw audio data from file
@@ -65,6 +70,7 @@ int main() {
     //Amplitude Modulation
     vector <float> modulatedAM (numSamples);
     for (size_t i=0; i<numSamples; ++i){
+        //computes the carrier signal
         modulatedAM[i] = samples[i] * cos(2* PI * CARRIER_FREQ * time[i]);
     }
     writeAudioData("modulated_am.raw" , modulatedAM);
@@ -72,11 +78,13 @@ int main() {
     //Amplitude Demodulation
     vector<float> demodulatedAM(numSamples);
     for (size_t i=0; i<numSamples; ++i){
+        // Demodulates the signal by multiplying it with the carrier signal again.
         demodulatedAM[i] = modulatedAM[i] * 2 * cos(2 * PI * CARRIER_FREQ * time[i]);
 
     }
 
     //low pass filter for demonstrating purposes
+    //Smoothens the demodulated signal
     size_t filterSize = 1000;
     for (size_t i=0; i<numSamples - filterSize; ++i) {
         float sum = 0.0f;
