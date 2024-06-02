@@ -90,8 +90,8 @@
 #include <cmath>
 #include <string>
 #include <vector>
-#include <complex>
-#include <algorithm> max_element
+#include <complex> //for using complex numbers in demodulation
+#include <algorithm> //max_element
 
 using namespace std;
 
@@ -145,6 +145,12 @@ int main() {
     }
 
     // Frequency Modulation
+    //reinterpret_casttype of cast that allows the conversion of any pointer type to any other pointer type , to convert a float* to a char*.
+    //const char*: specifies that the cast should convert to a pointer to constant characters. const indicates that the data being pointed to should not be modified.
+    //samples.data(): function returns a pointer to the underlying array serving as the storage for the elements in the samples vector.
+
+
+
     vector<float> modulatedFM(numSamples);
     double phase = 0.0;
     for (size_t i = 0; i < numSamples; ++i) {
